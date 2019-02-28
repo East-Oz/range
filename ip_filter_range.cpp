@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -15,8 +16,6 @@
 // ("11.", '.') -> ["11", ""]
 // (".11", '.') -> ["", "11"]
 // ("11.22", '.') -> ["11", "22"]
-
-#define	SAVE_IN_FILE	1 
 
 typedef std::vector<unsigned char> IPT;
 typedef std::vector<IPT> IP_STORAGE;
@@ -77,91 +76,37 @@ std::vector<unsigned char> get_vector_ip( std::string str, char d )
 	return out;
 }
 
-bool find_elements_function( const std::vector<unsigned char>& val )
+void show_ip_vector( IP_STORAGE& ip_pool_out )
 {
-	try
+	ranges::for_each( ip_pool_out, []( std::vector<unsigned char> ip_part )
 	{
-		if( val.at( 0 ) == 1 )
-			return true;
-		else if( (val.at( 0 ) == 46)
-			&& (val.at( 1 ) == 70) )
-			return true;
-		else if( (val.at( 0 ) == 46)
-			|| (val.at( 1 ) == 46)
-			|| (val.at( 2 ) == 46)
-			|| (val.at( 3 ) == 46)
-			)
-			return true;
-		else
-			return false;
-	}
-	catch( ... ) { return false; }
-}
-
-bool find_elem_cond3( const std::vector<unsigned char>& val )
-{
-	try
-	{
-		if( ( val.at( 0 ) == 46 )
-			|| ( val.at( 1 )  == 46 )
-			|| ( val.at( 2 )  == 46 )
-			|| ( val.at( 3 ) == 46 )
-			)
-			return true;
-		else
-			return false;
-	}
-	catch( ... ) { return false; }
-}
-
-template <typename T, typename U, typename K>
-bool compare( T& _src, U count, K val )
-{
-	if( count > 3 ) { return false; }
-	if( _src.at( count ) != val )
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
-}
-
-template<typename T, typename U, typename K, typename ...Args>
-bool compare( T& _src, U count, K val, Args ... args )
-{
-	bool bResult = false;
-	if( count > 3 ) { return false; }
-	if( _src.at( count ) != val )
-	{
-		return false;
-	}
-	else
-	{
-		bResult = true;
-		++count;
-		bResult &= compare( _src, count, args... );
-	}
-	return bResult;
-}
-
-template<typename T, typename ...Args>
-auto copy_collection( T& _src, T& _dst, Args ... args )
-{
-	bool bResult = false;
-	IP_STORAGE::iterator dst_it = _dst.begin();
-	for( IP_STORAGE::iterator it = _src.begin(); it != _src.end(); ++it )
-	{
-		size_t count = 0;
-		bResult = compare( *it, count, args... );
-
-		if( bResult )
+		size_t i = 0;
+		size_t ip_size = ip_part.size();
+		ranges::for_each( ip_part, [ & ]( unsigned char c )
 		{
-			*dst_it++ = *it;
-		}
+			std::cout << std::to_string( c );
+			if( i < (ip_size - 1) )
+				std::cout << '.';
+			++i;
+		} );
+		std::cout << std::endl;
+	} );
+}
+
+
+void show_ip_from_vector( const IPT& val )
+{
+	size_t i = 0;
+	size_t ip_size = val.size();
+
+	for(auto _v: val )
+	{
+		std::cout << std::to_string( _v );
+		if( i < (ip_size - 1) )
+			std::cout << '.';
+		++i;
 	}
-	return dst_it;
+	std::cout << std::endl;
 }
 
 int main( int, char** )
@@ -171,7 +116,6 @@ int main( int, char** )
 	try
 	{
 		ip_addr_vec ip_pool;
-		ip_addr_vec ip_pool_out;
 
 		for( std::string line; std::getline( std::cin, line );)
 		{
@@ -180,73 +124,67 @@ int main( int, char** )
 		}
 
 		// reverse lexicographically sort 
-		std::sort( ip_pool.begin(), ip_pool.end(), std::greater<>() );
-
-		// copy sorted vector to output vector
-		ip_pool_out = ip_pool;
-
-		// Create temp vector for all conditions
-		ip_addr_vec ip_temp( ip_pool.size() );
-
-		auto it = std::copy_if( ip_pool.begin(), ip_pool.end(), ip_temp.begin(), find_elements_function );
-		ip_temp.resize( std::distance( ip_temp.begin(), it ) );
-
-		// 1 condition first byte == 1
-		ip_addr_vec ip_cond1( ip_temp.size() );
+		ranges::sort( ip_pool, std::greater<>() );
 
 
-		auto it1 = copy_collection( ip_temp, ip_cond1, 1 );
-		ip_cond1.resize( std::distance( ip_cond1.begin(), it1 ) );
-		ip_pool_out.reserve( ip_pool_out.size() + ip_cond1.size() );
-		ip_pool_out.insert( ip_pool_out.end(), ip_cond1.begin(), ip_cond1.end() );
+		// show
+		show_ip_vector( ip_pool );
 
-		// 2 condition 46.70.*.*
-		ip_addr_vec ip_cond2( ip_temp.size() );
-		auto it2 = copy_collection( ip_temp, ip_cond2, 46, 70 );
-		ip_cond2.resize( std::distance( ip_cond2.begin(), it2 ) );
-		ip_pool_out.reserve( ip_pool_out.size() + ip_cond2.size() );
-		ip_pool_out.insert( ip_pool_out.end(), ip_cond2.begin(), ip_cond2.end() );
-
-		// 3 condition  any byte = 46
-		ip_addr_vec ip_cond3( ip_temp.size() );
-		auto it3 = std::copy_if( ip_temp.begin(), ip_temp.end(), ip_cond3.begin(), find_elem_cond3 );
-		ip_cond3.resize( std::distance( ip_cond3.begin(), it3 ) );
-		ip_pool_out.reserve( ip_pool_out.size() + ip_cond3.size() );
-		ip_pool_out.insert( ip_pool_out.end(), ip_cond3.begin(), ip_cond3.end() );
-
-#ifdef SAVE_IN_FILE
-		std::ofstream file( "ip_out.txt" );
-		std::string s;
-#endif
-
-		for( ip_addr_vec::const_iterator ip = ip_pool_out.cbegin(); ip != ip_pool_out.cend(); ++ip )
-		{
-#ifdef SAVE_IN_FILE
-			s = "";
-#endif
-			for( std::vector<unsigned char>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part )
+		// show first condition elements
+		auto first_confition = ip_pool | ranges::view::filter( [&]( const IPT& val )
+		{ 
+			try
 			{
-				if( ip_part != ip->cbegin() )
-				{
-					std::cout << ".";
-#ifdef SAVE_IN_FILE
-					s.append( "." );
-#endif
-				}
-				std::cout << std::to_string( *ip_part );
-#ifdef SAVE_IN_FILE
-				s.append( std::to_string( *ip_part ) );
-#endif
+				if( val.at( 0 ) == 1 )	return true;
+				else return false;
 			}
-			std::cout << std::endl;
-#ifdef SAVE_IN_FILE
-			file << s;
-			file << std::endl;
-#endif
+			catch( ... ) { return false; }
+		} );
+		for( const auto i : first_confition )
+		{
+			show_ip_from_vector( i );
 		}
-#ifdef SAVE_IN_FILE
-		file.close();
-#endif
+
+		// show second condition elements
+		auto second_confition = ip_pool | ranges::view::filter( [ & ]( const IPT& val )
+		{
+			try
+			{
+				if( (val.at( 0 ) == 46)
+					&& (val.at( 1 ) == 70) )
+					return true;
+				else
+					return false;
+			}
+			catch( ... ) { return false; }
+		} );
+		for( const auto i : second_confition )
+		{
+			show_ip_from_vector( i );
+		}
+
+
+		// show third condition elemants
+		auto third_confition = ip_pool | ranges::view::filter( [ & ]( const IPT& val )
+		{
+			try
+			{
+				if( ( val.at( 0 ) == 46 )
+					|| ( val.at( 1 ) == 46 )
+					|| ( val.at( 2 ) == 46 )
+					|| ( val.at( 3 ) == 46 )
+					)
+					return true;
+				else
+					return false;
+			}
+			catch( ... ) { return false; }
+		} );
+		for( const auto i : third_confition )
+		{
+			show_ip_from_vector( i );
+		}
+
 
 
 		// 222.173.235.246

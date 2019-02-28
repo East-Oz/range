@@ -2,18 +2,21 @@ language: cpp
 sudo: required
 before_script:
     - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-    - sudo apt-get update
-    - sudo apt-get -y install gcc-5 g++-5 libboost-test-dev
-    - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 1
-    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 1  
-    - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
-    - sudo apt-get update -qq
-#    - sudo apt-get install libspdlog-dev -y
-    - sudo apt-get -y install python3 python3-dev libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev python-pip
-#    - sudo pip install --upgrade pip
+    - sudo apt-get update -y
+    - sudo apt-get -y install gcc-7 g++-7
+    - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 90
+    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90  
+ #   - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
+ #   - sudo apt-get update -qq
+    - git clone https://github.com/Microsoft/vcpkg.git vcpkg
+    - cd vcpkg
+    - ./bootstrap-vcpkg.sh
+    - ./vcpkg integrate install
+    - ./vcpkg install range-v3
     - ls
-    - sudo pip install conan
-    - conan install range-v3/0.4.0@ericniebler/stable
+    - pwd
+    - export VCPKG_ROOT=`pwd`
+    - cd ..
 script:
   - cmake .
   - cmake --build . -- VERBOSE=1
